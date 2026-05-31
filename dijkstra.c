@@ -70,3 +70,27 @@ void dijkstra_result_free(DijkstraResult *r) {
     free(r->prev);
     free(r);
 }
+// Trace back from dst to src using the prev[] array 
+int dijkstra_get_path(const DijkstraResult *r, int src_index,
+                      int dst_index, int *path) {
+    if (!r || !path) return -1;
+    if (r->dist[dst_index] >= INF_DIST) return -1;
+
+    // Walk backwards then reverse 
+    int tmp[MAX_NODES];
+    int len = 0;
+    int cur = dst_index;
+
+    while (cur != -1) {
+        tmp[len++] = cur;
+        if (cur == src_index) break;
+        cur = r->prev[cur];
+        if (len > r->num_nodes) return -1;
+    }
+    if (cur != src_index) return -1;
+
+    for (int i = 0; i < len; i++)
+        path[i] = tmp[len - 1 - i];
+
+    return len;
+}
