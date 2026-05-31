@@ -18,4 +18,6 @@ typedef struct {
     int     num_nodes;      // length of dist[] and prev[]              
 } DijkstraResult;
 
+DijkstraResult *dijkstra_run(const Graph *g, int src_index);
+void            dijkstra_result_free(DijkstraResult *r);
 #endif
