@@ -22,4 +22,6 @@ DijkstraResult *dijkstra_run(const Graph *g, int src_index);
 void            dijkstra_result_free(DijkstraResult *r);
 int dijkstra_get_path(const DijkstraResult *r, int src_index,
                       int dst_index, int *path);
+void dijkstra_print_path(const Graph *g, const DijkstraResult *r,
+                         int src_index, int dst_index);
 #endif

@@ -94,3 +94,21 @@ int dijkstra_get_path(const DijkstraResult *r, int src_index,
 
     return len;
 }
+
+void dijkstra_print_path(const Graph *g, const DijkstraResult *r,
+                         int src_index, int dst_index) {
+    int path[MAX_NODES];
+    int len = dijkstra_get_path(r, src_index, dst_index, path);
+    if (len < 0) {
+        printf("No path from node %d to node %d\n",
+               g->nodes[src_index].id, g->nodes[dst_index].id);
+        return;
+    }
+    printf("Path (dist=%.4f, nodes_visited=%d): ",
+           r->dist[dst_index], r->nodes_visited);
+    for (int i = 0; i < len; i++) {
+        printf("%d", g->nodes[path[i]].id);
+        if (i < len - 1) printf(" -> ");
+    }
+    printf("\n");
+}
