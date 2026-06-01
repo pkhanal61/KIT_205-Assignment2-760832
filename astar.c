@@ -85,3 +85,24 @@ void astar_result_free(AStarResult *r) {
     free(r->prev);
     free(r);
 }
+
+int astar_get_path(const AStarResult *r, int src_index,
+                   int dst_index, int *path) {
+    if (!r || !path || !r->path_found) return -1;
+
+    int tmp[MAX_NODES];
+    int len = 0;
+    int cur = dst_index;
+
+    while (cur != -1) {
+        tmp[len++] = cur;
+        if (cur == src_index) break;
+        cur = r->prev[cur];
+        if (len > r->num_nodes) return -1;
+    }
+    if (cur != src_index) return -1;
+
+    for (int i = 0; i < len; i++)
+        path[i] = tmp[len - 1 - i];
+    return len;
+}

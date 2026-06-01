@@ -21,5 +21,7 @@ typedef struct {
 AStarResult *astar_run(const Graph *g, int src_index, int dst_index,
                         double weight);
 void          astar_result_free(AStarResult *r);
+int astar_get_path(const AStarResult *r, int src_index,
+                   int dst_index, int *path);
 
 #endif 
