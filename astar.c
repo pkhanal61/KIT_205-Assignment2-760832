@@ -106,3 +106,23 @@ int astar_get_path(const AStarResult *r, int src_index,
         path[i] = tmp[len - 1 - i];
     return len;
 }
+
+void astar_print_path(const Graph *g, const AStarResult *r,
+                      int src_index, int dst_index) {
+    if (!r->path_found) {
+        printf("A*: No path from node %d to node %d\n",
+               g->nodes[src_index].id, g->nodes[dst_index].id);
+        return;
+    }
+    int path[MAX_NODES];
+    int len = astar_get_path(r, src_index, dst_index, path);
+    if (len < 0) { printf("A*: path reconstruction failed\n"); return; }
+
+    printf("Path (dist=%.4f, nodes_visited=%d): ",
+           r->path_cost, r->nodes_visited);
+    for (int i = 0; i < len; i++) {
+        printf("%d", g->nodes[path[i]].id);
+        if (i < len - 1) printf(" -> ");
+    }
+    printf("\n");
+}

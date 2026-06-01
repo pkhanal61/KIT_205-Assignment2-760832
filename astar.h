@@ -23,5 +23,9 @@ AStarResult *astar_run(const Graph *g, int src_index, int dst_index,
 void          astar_result_free(AStarResult *r);
 int astar_get_path(const AStarResult *r, int src_index,
                    int dst_index, int *path);
+void astar_print_path(const Graph *g, const AStarResult *r,
+                      int src_index, int dst_index);
+
+
 
 #endif 
