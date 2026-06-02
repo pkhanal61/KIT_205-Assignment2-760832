@@ -124,3 +124,105 @@ void test_priority_queue(void) {
 
     test_summary();
 }
+void test_dijkstra(void) {
+    printf("\n=== UNIT TESTS: Dijkstra ===\n");
+
+    Graph *g = graph_create(1);
+    graph_add_node(g, 0, 0.0, 0.0);
+    graph_add_node(g, 1, 3.0, 0.0);
+    graph_add_node(g, 2, 7.0, 0.0);
+    graph_add_edge(g, 0, 1, 3.0);
+    graph_add_edge(g, 1, 2, 4.0);
+    graph_add_edge(g, 0, 2, 10.0);
+
+    DijkstraResult *r = dijkstra_run(g, 0);
+    ASSERT("dijkstra_run returns non-NULL", r != NULL);
+    ASSERT_NEAR("dist[0] = 0", r->dist[0],  0.0, 1e-9);
+    ASSERT_NEAR("dist[1] = 3", r->dist[1],  3.0, 1e-9);
+    ASSERT_NEAR("dist[2] = 7", r->dist[2],  7.0, 1e-9);
+    ASSERT("nodes_visited == 3", r->nodes_visited == 3);
+
+    //Path reconstruction 
+    int path[MAX_NODES];
+    int len = dijkstra_get_path(r, 0, 2, path);
+    ASSERT("path length 0->2 is 3",    len == 3);
+    ASSERT("path[0] = 0 (source)",     len > 0 && path[0] == 0);
+    ASSERT("path[1] = 1 (via node 1)", len > 1 && path[1] == 1);
+    ASSERT("path[2] = 2 (destination)", len > 2 && path[2] == 2);
+    dijkstra_result_free(r);
+
+    // No path (directed graph)
+    DijkstraResult *r2 = dijkstra_run(g, 2);
+    ASSERT("no path: dist[0] = INF", r2->dist[0] >= INF_DIST);
+    int nop = dijkstra_get_path(r2, 2, 0, path);
+    ASSERT("get_path returns -1 when no path", nop == -1);
+    dijkstra_result_free(r2);
+
+    // Single node graph
+    Graph *solo = graph_create(1);
+    graph_add_node(solo, 42, 0.0, 0.0);
+    DijkstraResult *rs = dijkstra_run(solo, 0);
+    ASSERT_NEAR("single node: dist to itself = 0", rs->dist[0], 0.0, 1e-9);
+    dijkstra_result_free(rs);
+    graph_destroy(solo);
+
+    graph_destroy(g);
+    test_summary();
+}
+
+void test_astar(void) {
+    printf("\n=== UNIT TESTS: A* ===\n");
+
+    // Same graph as Dijkstra test — A* must find same optimal path
+    Graph *g = graph_create(1);
+    graph_add_node(g, 0, 0.0, 0.0);
+    graph_add_node(g, 1, 3.0, 0.0);
+    graph_add_node(g, 2, 7.0, 0.0);
+    graph_add_edge(g, 0, 1, 3.0);
+    graph_add_edge(g, 1, 2, 4.0);
+    graph_add_edge(g, 0, 2, 10.0);
+
+    AStarResult *r = astar_run(g, 0, 2, 1.0);
+    ASSERT("astar_run returns non-NULL", r != NULL);
+    ASSERT("path found",                 r->path_found);
+    ASSERT_NEAR("A* cost matches Dijkstra (7)", r->path_cost, 7.0, 1e-9);
+    ASSERT("A* nodes_visited <= 3",      r->nodes_visited <= 3);
+
+    int path[MAX_NODES];
+    int len = astar_get_path(r, 0, 2, path);
+    ASSERT("A* path length is 3",  len == 3);
+    ASSERT("A* path[0] = 0",       len > 0 && path[0] == 0);
+    ASSERT("A* path[1] = 1",       len > 1 && path[1] == 1);
+    ASSERT("A* path[2] = 2",       len > 2 && path[2] == 2);
+    astar_result_free(r);
+
+    // No path
+    AStarResult *r2 = astar_run(g, 2, 0, 1.0);
+    ASSERT("path_found = 0 when no path", !r2->path_found);
+    astar_result_free(r2);
+
+    // Weighted A* (w=2.0) still finds a path
+    AStarResult *rw = astar_run(g, 0, 2, 2.0);
+    ASSERT("weighted A* (w=2) finds a path", rw != NULL && rw->path_found);
+    astar_result_free(rw);
+
+    // 4-node graph — verify correct path chosen 
+    Graph *g2 = graph_create(1);
+    graph_add_node(g2, 0, 0.0, 0.0);
+    graph_add_node(g2, 1, 1.0, 0.0);
+    graph_add_node(g2, 2, 1.0, 5.0);
+    graph_add_node(g2, 3, 2.0, 0.0);
+    graph_add_edge(g2, 0, 1, 1.0);
+    graph_add_edge(g2, 1, 3, 1.0);
+    graph_add_edge(g2, 0, 2, 10.0);
+    graph_add_edge(g2, 2, 3, 10.0);
+
+    AStarResult *r3 = astar_run(g2, 0, 3, 1.0);
+    ASSERT("A* finds correct path in 4-node graph", r3 != NULL && r3->path_found);
+    ASSERT_NEAR("A* cost in 4-node graph = 2", r3->path_cost, 2.0, 1e-9);
+    astar_result_free(r3);
+    graph_destroy(g2);
+
+    graph_destroy(g);
+    test_summary();
+}
