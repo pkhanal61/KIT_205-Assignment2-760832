@@ -87,3 +87,40 @@ void test_graph(void) {
 
     test_summary();
 }
+
+void test_priority_queue(void) {
+    printf("\n=== UNIT TESTS: Priority Queue ===\n");
+
+    PriorityQueue *pq = pq_create(8);
+    ASSERT("pq_create returns non-NULL", pq != NULL);
+    ASSERT("new PQ is empty", pq_is_empty(pq));
+
+    pq_push(pq, 3, 5.0);
+    pq_push(pq, 1, 2.0);
+    pq_push(pq, 4, 8.0);
+    pq_push(pq, 2, 1.0);
+
+    ASSERT("PQ not empty after pushes", !pq_is_empty(pq));
+
+    PQEntry e1 = pq_pop(pq);
+    ASSERT("pop returns lowest priority first (node 2)", e1.node == 2);
+
+    PQEntry e2 = pq_pop(pq);
+    ASSERT("second pop returns node 1", e2.node == 1);
+
+    PQEntry e3 = pq_pop(pq);
+    ASSERT("third pop returns node 3",  e3.node == 3);
+
+    PQEntry e4 = pq_pop(pq);
+    ASSERT("fourth pop returns node 4", e4.node == 4);
+
+    ASSERT("PQ empty after all pops", pq_is_empty(pq));
+
+    PQEntry empty = pq_pop(pq);
+    ASSERT("pop from empty returns node -1", empty.node == -1);
+
+    pq_destroy(pq);
+    ASSERT("pq_destroy no crash", 1);
+
+    test_summary();
+}
