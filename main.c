@@ -244,14 +244,7 @@ int main(int argc, char *argv[]) {
         separator();
     }
 
-    if (run_exp) {
-        printf("\nPART 2 — EXPERIMENTS\n");
-        separator();
-        experiment_city_demo();
-        separator();
-        printf("All experiments complete.\n");
-        separator();
-    }
+
 
     if (run_exp) {
         printf("\nPART 2 — EXPERIMENTS\n");
