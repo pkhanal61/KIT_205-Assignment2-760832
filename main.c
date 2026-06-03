@@ -23,14 +23,14 @@ static void experiment_city_demo(void) {
      *   0 -5-> 4 -4-> 5
      */
     Graph *g = graph_create(1);
-    graph_add_node(g, 0, 0.0, 0.0); /* Hospital     */
+    graph_add_node(g, 0, 0.0, 0.0); // Hospital
     graph_add_node(g, 1, 0.0, 2.0);
     graph_add_node(g, 2, 3.0, 2.0);
     graph_add_node(g, 3, 0.0, 5.0);
     graph_add_node(g, 4, 5.0, 0.0);
     graph_add_node(g, 5, 3.0, 5.0);
     graph_add_node(g, 6, 1.0, 7.0);
-    graph_add_node(g, 7, 4.0, 7.0); /* Fire Station */
+    graph_add_node(g, 7, 4.0, 7.0); // Fire Station
 
     graph_add_edge(g, 0, 1, 2.0);
     graph_add_edge(g, 0, 4, 5.0);
@@ -60,6 +60,138 @@ static void experiment_city_demo(void) {
     dijkstra_result_free(dr);
     astar_result_free(ar1);
     astar_result_free(ar2);
+    graph_destroy(g);
+}
+
+static double elapsed_seconds(clock_t start, clock_t end) {
+    return (double)(end - start) / CLOCKS_PER_SEC;
+}
+
+static void experiment_density(void) {
+    printf("\n=== EXPERIMENT 2: Effect of Graph Density (20x20 grid) ===\n");
+    printf("Routing from node 0 to node 399\n\n");
+
+    double densities[] = {0.3, 0.6, 1.0};
+    const char *labels[] = {"Sparse (0.3)", "Medium (0.6)", "Dense  (1.0)"};
+    int rows = 20, cols = 20;
+
+    for (int d = 0; d < 3; d++) {
+        Graph *g = graph_generate_grid(rows, cols, densities[d], 1, 42 + d);
+        if (!g) continue;
+
+        int src = graph_find_node(g, 0);
+        int dst = graph_find_node(g, rows * cols - 1);
+
+        printf("  [%s]  nodes=%d  edges=%d\n",
+               labels[d], g->num_nodes, g->num_edges);
+
+        clock_t t0 = clock();
+        DijkstraResult *dr = dijkstra_run(g, src);
+        clock_t t1 = clock();
+
+        clock_t t2 = clock();
+        AStarResult *ar = astar_run(g, src, dst, 1.0);
+        clock_t t3 = clock();
+
+        printf("  %-20s  visited=%-6d  dist=%.4f  time=%.6fs\n",
+               "Dijkstra",
+               dr->nodes_visited, dr->dist[dst],
+               elapsed_seconds(t0, t1));
+        printf("  %-20s  visited=%-6d  dist=%.4f  time=%.6fs\n",
+               "A* (w=1.0)",
+               ar->nodes_visited, ar->path_cost,
+               elapsed_seconds(t2, t3));
+
+        if (dr->nodes_visited > 0) {
+            double ratio = 100.0 * ar->nodes_visited / dr->nodes_visited;
+            printf("  A* visited %.1f%% of nodes Dijkstra visited\n", ratio);
+        }
+        printf("\n");
+
+        dijkstra_result_free(dr);
+        astar_result_free(ar);
+        graph_destroy(g);
+    }
+}
+
+static void experiment_size(void) {
+    printf("\n=== EXPERIMENT 3: Scalability — Effect of Graph Size ===\n");
+    printf("Density fixed at 0.6.  Routing corner to corner.\n\n");
+    printf("  %-12s  %-8s  %-8s  %-10s  %-10s  %-10s  %-10s\n",
+           "Grid", "Nodes", "Edges",
+           "Dijk.Vis", "A*.Vis",
+           "Dijk.t(s)", "A*.t(s)");
+    printf("  ------------------------------------------------------------\n");
+
+    int sizes[][2] = {{5,5},{10,10},{20,20},{30,30}};
+    int n_sizes = 4;
+
+    for (int s = 0; s < n_sizes; s++) {
+        int rows = sizes[s][0], cols = sizes[s][1];
+        Graph *g = graph_generate_grid(rows, cols, 0.6, 1, 100 + s);
+        if (!g) continue;
+
+        int src = graph_find_node(g, 0);
+        int dst = graph_find_node(g, rows * cols - 1);
+
+        clock_t t0 = clock();
+        DijkstraResult *dr = dijkstra_run(g, src);
+        clock_t t1 = clock();
+
+        clock_t t2 = clock();
+        AStarResult *ar = astar_run(g, src, dst, 1.0);
+        clock_t t3 = clock();
+
+        char label[16];
+        snprintf(label, sizeof(label), "%dx%d", rows, cols);
+        printf("  %-12s  %-8d  %-8d  %-10d  %-10d  %-10.6f  %-10.6f\n",
+               label, g->num_nodes, g->num_edges,
+               dr->nodes_visited, ar->nodes_visited,
+               elapsed_seconds(t0, t1), elapsed_seconds(t2, t3));
+
+        dijkstra_result_free(dr);
+        astar_result_free(ar);
+        graph_destroy(g);
+    }
+    printf("\n");
+}
+
+static void experiment_heuristic_weight(void) {
+    printf("\n=== EXPERIMENT 4: A* Heuristic Weight (20x20, density=0.6) ===\n");
+    printf("w=1.0 => optimal;  w>1.0 => faster but possibly suboptimal\n\n");
+
+    Graph *g = graph_generate_grid(20, 20, 0.6, 1, 999);
+    if (!g) return;
+
+    int src = graph_find_node(g, 0);
+    int dst = graph_find_node(g, 399);
+
+    clock_t t0 = clock();
+    DijkstraResult *dr = dijkstra_run(g, src);
+    clock_t t1 = clock();
+    double opt_dist = dr->dist[dst];
+    printf("  Dijkstra (optimal):  dist=%.4f  time=%.6fs\n\n",
+           opt_dist, elapsed_seconds(t0, t1));
+    dijkstra_result_free(dr);
+
+    printf("  %-8s  %-8s  %-12s  %-10s  %-10s\n",
+           "Weight", "Visited", "Dist", "Err%", "Time(s)");
+    printf("  ------------------------------------------------\n");
+
+    double weights[] = {1.0, 1.5, 2.0, 3.0};
+    for (int w = 0; w < 4; w++) {
+        clock_t ta = clock();
+        AStarResult *ar = astar_run(g, src, dst, weights[w]);
+        clock_t tb = clock();
+
+        double dist = ar->path_cost;
+        double err  = 100.0 * (dist - opt_dist) / opt_dist;
+        printf("  %-8.1f  %-8d  %-12.4f  %-10.2f  %-10.6f\n",
+               weights[w], ar->nodes_visited, dist, err,
+               elapsed_seconds(ta, tb));
+        astar_result_free(ar);
+    }
+    printf("\n");
     graph_destroy(g);
 }
 
@@ -116,6 +248,18 @@ int main(int argc, char *argv[]) {
         printf("\nPART 2 — EXPERIMENTS\n");
         separator();
         experiment_city_demo();
+        separator();
+        printf("All experiments complete.\n");
+        separator();
+    }
+
+    if (run_exp) {
+        printf("\nPART 2 — EXPERIMENTS\n");
+        separator();
+        experiment_city_demo();
+        experiment_density();
+        experiment_size();
+        experiment_heuristic_weight();
         separator();
         printf("All experiments complete.\n");
         separator();
