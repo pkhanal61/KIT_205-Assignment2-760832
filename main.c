@@ -12,7 +12,56 @@
 static void separator(void) {
     printf("----------------------------------------------------------\n");
 }
+static void experiment_city_demo(void) {
+    printf("\n=== EXPERIMENT 1: Small City Road Network Demo ===\n");
+    printf("8 intersections, emergency vehicle from Hospital (0) to Fire Station (7)\n\n");
 
+    /*
+     * Layout (coordinates in km):
+     *   0(Hospital) -2-> 1 -3-> 2 -2-> 5 -1-> 7(Fire Station)
+     *   0 -4-> 3 -3-> 6 -2-> 7
+     *   0 -5-> 4 -4-> 5
+     */
+    Graph *g = graph_create(1);
+    graph_add_node(g, 0, 0.0, 0.0); /* Hospital     */
+    graph_add_node(g, 1, 0.0, 2.0);
+    graph_add_node(g, 2, 3.0, 2.0);
+    graph_add_node(g, 3, 0.0, 5.0);
+    graph_add_node(g, 4, 5.0, 0.0);
+    graph_add_node(g, 5, 3.0, 5.0);
+    graph_add_node(g, 6, 1.0, 7.0);
+    graph_add_node(g, 7, 4.0, 7.0); /* Fire Station */
+
+    graph_add_edge(g, 0, 1, 2.0);
+    graph_add_edge(g, 0, 4, 5.0);
+    graph_add_edge(g, 1, 2, 3.0);
+    graph_add_edge(g, 1, 3, 4.0);
+    graph_add_edge(g, 2, 5, 2.0);
+    graph_add_edge(g, 3, 6, 3.0);
+    graph_add_edge(g, 4, 5, 4.0);
+    graph_add_edge(g, 5, 7, 1.0);
+    graph_add_edge(g, 6, 7, 2.0);
+
+    int src = graph_find_node(g, 0);
+    int dst = graph_find_node(g, 7);
+
+    DijkstraResult *dr = dijkstra_run(g, src);
+    printf("  Dijkstra: ");
+    dijkstra_print_path(g, dr, src, dst);
+
+    AStarResult *ar1 = astar_run(g, src, dst, 1.0);
+    printf("  A*(w=1):  ");
+    astar_print_path(g, ar1, src, dst);
+
+    AStarResult *ar2 = astar_run(g, src, dst, 2.0);
+    printf("  A*(w=2):  ");
+    astar_print_path(g, ar2, src, dst);
+
+    dijkstra_result_free(dr);
+    astar_result_free(ar1);
+    astar_result_free(ar2);
+    graph_destroy(g);
+}
 
 int main(int argc, char *argv[]) {
     printf("=========================================================\n");
@@ -60,6 +109,15 @@ int main(int argc, char *argv[]) {
         if (total_fail > 0)
             printf("  *** %d FAILED ***", total_fail);
         printf("\n");
+        separator();
+    }
+
+    if (run_exp) {
+        printf("\nPART 2 — EXPERIMENTS\n");
+        separator();
+        experiment_city_demo();
+        separator();
+        printf("All experiments complete.\n");
         separator();
     }
 
