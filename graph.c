@@ -48,7 +48,7 @@ int graph_add_node(Graph *g, int id, double x, double y) {
         fprintf(stderr, "graph_add_node: MAX_NODES (%d) reached\n", MAX_NODES);
         return -1;
     }
-    /* Reject duplicate IDs */
+    // Reject duplicate IDs
     if (graph_find_node(g, id) >= 0) return -1;
 
     int idx = g->num_nodes++;
